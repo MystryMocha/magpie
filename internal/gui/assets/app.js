@@ -2272,10 +2272,7 @@ function connectPanel(a, { fields, fieldBtn }) {
   // unset; Codex's is the very value its /model picks, so one choice
   // the model it starts on is on the row; what goes with it here
   if (fields) {
-    // each setting named, as the tray panel's opened rows name them. On the
-    // row a setting nobody has picked is the agent's own logo for want of
-    // room, which says nothing about which setting it is, and four of them
-    // laid side by side all read as one
+    // each setting named: on the row an unpicked one is only the agent's logo
     for (const b of fields.querySelectorAll(":scope > .field")) {
       const f = a.fields.find((x) => x.key === b.dataset.key);
       if (f && !b.querySelector(":scope > .k")) b.prepend(el("span", "k", t(f.label)));
@@ -2287,6 +2284,10 @@ function connectPanel(a, { fields, fieldBtn }) {
     if (detail.detail) { const f = a.fields.find((x) => x.key === key); kv(t(f?.label || key), line(t(detail.detail))); }
   }
   if (CONNECT_COST[kindOf(a)]) kv(t("Once connected"), line(t(CONNECT_COST[kindOf(a)])));
+  if (a.advisor) {
+    const v = kv(t("Advisor"), line(t(a.advisor.row, a.advisor)));
+    import("./ompadvisor.js").then(() => ompAdvisorEdit(a, v), statusErr);
+  }
   // its own settings (agentPrefRows), shown once read
   const own = agentPrefsOf(a);
   if (own) {
@@ -4205,7 +4206,7 @@ function tierMenu(a) {
     options: tiers.flatMap((f) => {
       const model = {
         value: f.key, label: t(f.label), icon: optionFor(f, f.value)?.icon || (main && optionFor(main, main.value)?.icon),
-        note: f.value ? name(f) : unset(f),
+        note: (f.value ? name(f) : unset(f)) + (f.label === "advisor" && a.advisor?.note ? " · " + t(a.advisor.note) : ""),
       };
       const e = effortOf(f);
       return e ? [model, { value: e.key, label: t(e.label), effortOf: e, note: level(e) || levelUnset(a) }] : [model];

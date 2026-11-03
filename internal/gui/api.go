@@ -259,6 +259,10 @@ type agentJSON struct {
 	// copies; Terminal: and opens in a terminal, this system having one
 	Command  string `json:"command,omitempty"`
 	Terminal bool   `json:"terminal,omitempty"`
+	// Advisor: omp's advisor switch, and the user's WATCHDOG.yml whose
+	// roster runs in the advisor role's place (agent.OmpAdvisorBrief), for
+	// the role's line to say so (#5019)
+	Advisor *agent.OmpAdvisorBrief `json:"advisor,omitempty"`
 }
 
 // clientJSON is an agent, or another client the gateway knows, as a
@@ -1396,6 +1400,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 	sessionRoutes(mux, w)
 	sessionManageRoutes(mux, w)
 	backupRoutes(mux, w)
+	ompAdvisorRoutes(mux, w)
 	uninstallRoutes(mux, w)
 	archiveRoutes(mux)
 	libraryRoutes(mux, w)
@@ -2802,6 +2807,7 @@ func state() stateJSON {
 			native := a.Native.Read()
 			aj.Native = &native
 		}
+		aj.Advisor = a.OmpAdvisorBrief()
 		s.Agents = append(s.Agents, aj)
 	}
 	if ps, err := profile.Load(); err == nil {

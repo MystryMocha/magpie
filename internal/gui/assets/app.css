@@ -3002,10 +3002,10 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 #gatewayKeys .amodels.key-readonly { display: inline-block; flex: 0 1 auto; min-width: 0; line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
 #gatewayKeys .amodels.key-readonly:hover { color: var(--accent); background: var(--accent-soft); }
 /* the Settings row's picker: the key row's badge, always shown */
-.row.pref .proto.pick { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 6px 0 9px; font: inherit; font-size: 12px; color: var(--fg-2); border: 0; border-radius: 7px; background: var(--pill); white-space: nowrap; cursor: default; transition: background .12s, color .12s; }
-.row.pref .proto.pick svg { opacity: .7; transition: transform .15s var(--ease); }
-.row.pref .proto.pick.open svg { transform: rotate(180deg); }
-.row.pref .proto.pick:hover, .row.pref .proto.pick.open { color: var(--fg); background: var(--pill-hover); }
+.row.pref .proto.pick, .omp-adv .ehead .proto.pick { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 6px 0 9px; font: inherit; font-size: 12px; color: var(--fg-2); border: 0; border-radius: 7px; background: var(--pill); white-space: nowrap; cursor: default; transition: background .12s, color .12s; }
+.row.pref .proto.pick svg, .omp-adv .ehead .proto.pick svg { opacity: .7; transition: transform .15s var(--ease); }
+.row.pref .proto.pick.open svg, .omp-adv .ehead .proto.pick.open svg { transform: rotate(180deg); }
+.row.pref .proto.pick:hover, .row.pref .proto.pick.open, .omp-adv .ehead .proto.pick:hover, .omp-adv .ehead .proto.pick.open { color: var(--fg); background: var(--pill-hover); }
 .row.pref .proto.pick.busy { opacity: .6; }
 .row.pref .tray-windows { flex: 0 1 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 0; max-width: 55%; }
 .row.pref .tray-windows .proto.pick { max-width: 100%; margin-left: 0; }
@@ -3328,6 +3328,59 @@ body.window .ag-sk-icon { width: 22px; height: 22px; border-radius: 6px; }
 .editor .pair.bal-ask .segs { flex: none; align-self: center; }
 .editor .bal-found { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 12px; line-height: 1.45; color: var(--muted); }
 .editor .bal-found span { overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+/* omp's advisor (#5019, ompadvisor.js): an agent's settings sheet
+   (.agent-prefs), its rows a little closer so the first page fits a
+   600px window; a row that opens a page says its value on the right */
+.omp-adv .ehead { flex-wrap: wrap; row-gap: 6px; }
+.omp-adv .ehead .oa-where { margin-left: auto; align-self: center; }
+.omp-adv .ehead .proto.pick { margin-left: 0; min-width: 0; max-width: 220px; }
+.omp-adv .ehead .proto.pick > span { overflow: hidden; text-overflow: ellipsis; }
+.omp-adv .ehead .oa-file { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omp-adv .oa-back { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--fg-2); }
+.omp-adv .oa-back svg { transform: scaleX(-1); }
+.omp-adv .oa-back:hover { background: var(--pill); color: var(--fg); }
+.omp-adv .oa-file { font-size: 11px; font-weight: 400; color: var(--muted); overflow-wrap: anywhere; }
+.omp-adv .row.pref { min-height: 44px; padding: 9px 12px 9px 14px; }
+.omp-adv .oa-cap { display: flex; align-items: baseline; gap: 8px; min-width: 0; margin: 2px 2px -4px 2px; font-size: 13px; }
+.omp-adv .oa-cap .oa-file { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omp-adv .oa-cap .text { flex: none; padding: 2px 6px; }
+.omp-adv .row.oa-nav { width: 100%; border: 0; margin: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: default; }
+.omp-adv .row.oa-nav + .row, .omp-adv .row + .row.oa-nav { border-top: 1px solid var(--line-2); }
+.omp-adv .oa-nav .name { flex: none; }
+.omp-adv .oa-nav .oa-v { flex: 1 1 auto; min-width: 0; text-align: end; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omp-adv :is(.oa-nav, .oa-adv) .chev { flex: none; display: inline-flex; color: var(--muted); }
+.omp-adv :is(.oa-nav, .oa-adv):hover { background: var(--card-2); }
+.omp-adv .oa-adv.paused .name { color: var(--muted); }
+.omp-adv .oa-adv .who { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.omp-adv .oa-adv .who .sub { margin-top: 0; font-size: 12px; white-space: nowrap; }
+.omp-adv .row.pref.oa-nav { min-height: 40px; padding-block: 8px; }
+/* a line and its value stay one line at any width, the value cut short */
+body .omp-adv .row.pref.oa-nav { flex-wrap: nowrap; }
+.omp-adv .row.pref .proto.pick { min-width: 0; max-width: 55%; }
+.omp-adv .row.pref .proto.pick > span { overflow: hidden; text-overflow: ellipsis; }
+.omp-adv .row.pref .proto.pick:disabled { opacity: .5; }
+.omp-adv .oa-adv .proto.pick { margin-left: auto; }
+.omp-adv .oa-adv .chev { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
+.omp-adv .oa-adv[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.omp-adv .oa-adv-body { border-top: 1px solid var(--line-2); background: var(--card-2); }
+.omp-adv .oa-adv-body + .row { border-top: 1px solid var(--line-2); }
+.omp-adv .oa-adv-body .row.pref { min-height: 40px; padding: 6px 12px 6px 26px; }
+.omp-adv .oa-adv-body .row.pref .name { font-size: 13px; color: var(--fg-2); }
+.omp-adv .oa-adv-body .row.oa-adv-end { min-height: 36px; padding: 4px 8px; justify-content: flex-end; }
+.omp-adv .oa-ctl { flex: 0 1 auto; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; min-width: 0; margin-left: auto; }
+.omp-adv .row.pref .oa-ctl .proto.pick { margin-left: 0; max-width: 100%; }
+.omp-adv .oa-ctl .segs { margin-left: 0; }
+.omp-adv .row.pref > input.words:not(.compact-num) { flex: 0 1 240px; }
+.omp-adv .row.oa-wide { flex-wrap: wrap; }
+.omp-adv .row.oa-wide > .who { flex-basis: 100%; }
+.omp-adv .row.oa-wide > :is(textarea, input) { flex: 1 1 100%; width: 100%; }
+.omp-adv .oa-text { box-sizing: border-box; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font: inherit; font-size: 12.5px; line-height: 1.5; resize: vertical; outline: none; }
+.omp-adv .oa-text:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.omp-adv .row.pref .sub.oa-off { color: var(--amber); }
+.omp-adv .row.pref .sub.oa-err { color: var(--amber); font-family: var(--code); font-size: 11.5px; }
+.omp-adv .oa-warn { margin: 0; font-size: 12px; color: var(--amber); overflow-wrap: anywhere; }
+.omp-adv .bar .oa-eff-open { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+.omp-adv .bar .oa-eff-open > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editor .side { display: flex; gap: 4px; align-items: center; flex: none; min-width: 52px; justify-content: flex-end; }
 .editor .side .text { padding: 3px 6px; }
 .editor .headers .pair .side .text { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 6px; }
