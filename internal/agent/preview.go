@@ -204,6 +204,9 @@ func DisconnectPreview(a *Agent, exe string) ([]FileChange, error) {
 			}
 		}
 	}
+	if a.beyond != nil {
+		changes = append(changes, a.beyond()...)
+	}
 	return changes, nil
 }
 

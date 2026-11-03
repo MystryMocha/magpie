@@ -55,8 +55,8 @@ var Vars = []string{
 	// PenguinHarness's data root and the Project its CLI works in
 	// ($PENGUIN_HOME/$PENGUIN_PROJECT_ID/.project_config.toml)
 	"PENGUIN_HOME", "PENGUIN_PROJECT_ID",
-	// omp
-	"OMP_PROFILE",
+	// omp; PI_CONFIG_FILES, the config files it reads over its own
+	"OMP_PROFILE", "PI_CONFIG_FILES",
 	// Qoder's two builds, the global site's and China's
 	"QODER_CONFIG_DIR", "QODERCN_CONFIG_DIR",
 	// Grok: its home, and where its CLI is installed
@@ -136,11 +136,12 @@ var Vars = []string{
 // folder: a profile's name, a server's address, a secret, or a name its
 // agent puts under a folder of its own (PI_CONFIG_DIR under the home,
 // OPENCODE_DB in OpenCode's data folder), which a relative value is meant
-// for.
+// for, or a list of files (PI_CONFIG_FILES, a relative one under the
+// project omp runs in).
 var NotPaths = map[string]bool{
 	"PI_PROFILE": true, "OMP_PROFILE": true,
 	"WINDSURF_API_SERVER_URL": true, "ZCODE_CREDENTIAL_SECRET": true,
-	"PI_CONFIG_DIR": true, "OPENCODE_DB": true,
+	"PI_CONFIG_DIR": true, "OPENCODE_DB": true, "PI_CONFIG_FILES": true,
 	"STEPCODE_CONFIG_DIR": true,
 	"MAGPIE_ZED_BIN":      true, "MAGPIE_ZED_PROCESS_NAMES": true,
 	"PENGUIN_PROJECT_ID": true,

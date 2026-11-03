@@ -37,8 +37,10 @@ var ompEfforts = []string{"minimal", "low", "medium", "high", "xhigh", "max"}
 // (retry-fallback-chains.ts) — a role's name read with them is no model of
 // magpie's and is passed over), the models it cycles through (enabledModels,
 // also scoped to paths) and the models of task agents. An entry may end in a
-// thinking level ("magpie/deepseek/pro:max").
-var ompRefKeys = []string{"modelRoles", "retry.fallbackChains", "enabledModels", "task.agentModelOverrides"}
+// thinking level ("magpie/deepseek/pro:max"). The advisor of each subagent
+// (task.agentAdvisor) may be a model too, beside on and off; the advisors
+// of a WATCHDOG.yml name theirs in that file (ompAdvisorAt.rosters).
+var ompRefKeys = []string{"modelRoles", "retry.fallbackChains", "enabledModels", "task.agentModelOverrides", "task.agentAdvisor"}
 
 // ompRefs calls fn on each model of a value under ompRefKeys, the spaces
 // after a comma kept, and answers the value with fn's answers in place.
@@ -210,6 +212,9 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 		return yml
 	}
 	path := pick("config")
+	// the advisor's settings beyond its role (omp_advisor.go), whose
+	// rosters may name magpie's models too
+	adv := &ompAdvisorAt{at: at, dir: dir, config: path, entry: entry}
 	// the entries of enabledModels a sync took out (scope_gone.go)
 	gone := at.key("omp.scope.gone")
 	roleGet := func(name string) func() string {
@@ -231,7 +236,7 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			ompRefs(v, func(m string) string { used = used || usesMagpie(m); return m })
 			return v
 		})
-		return used, err
+		return used || err == nil && adv.rosterOnMagpie(), err
 	}
 	writeMagpie := func() error {
 		models := pick("models")
@@ -258,6 +263,9 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			ompRefs(v, func(m string) string { used = used || usesMagpie(m); return m })
 			return v
 		})
+		if err == nil && !used {
+			used = adv.rosterOnMagpie()
+		}
 		if err == nil && !used {
 			used, err = ompScopeFoldersOnMagpie(path)
 		}
@@ -449,7 +457,7 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			},
 		})
 	}
-	return &Agent{
+	a := &Agent{
 		ID: "omp", Name: "omp", Icon: "omp", Aliases: []string{"oh-my-pi"}, Spelled: prefixed,
 		UA:  []string{"oh-my-pi"},
 		Bin: "omp", Dir: dir, Path: path,
@@ -480,7 +488,12 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 					return m
 				})
 			}
-			moved := false
+			// what magpie wrote of the advisor's first, its record moved
+			// with it: the rosters' models, a project's keys
+			moved, err := adv.renameRefs(move)
+			if err != nil {
+				return moved, err
+			}
 			if err := edit.EditYAMLStrings(path, ompRefKeys, func(v string) string {
 				nv := move(v)
 				moved = moved || nv != v
@@ -551,6 +564,21 @@ func ompAt(at place, dir string, entry func() ompProviderEntry) *Agent {
 			Options: func(map[string]string) []Option { return static(append([]string{"auto"}, ompEfforts...)...) },
 		}),
 	}
+	// the advisor's settings beyond its role (omp_advisor.go): a
+	// disconnect puts back what magpie wrote of them, a project's too.
+	// What it puts back may be the last thing on magpie (a fallback chain,
+	// a roster's model): magpie's provider then goes, as dropMagpie has it
+	// go for a role
+	adv.agent = a
+	a.ompAdvisor = adv
+	a.Restore = func() error {
+		if err := a.ompAdvisorRestore(); err != nil {
+			return err
+		}
+		return dropMagpie()
+	}
+	a.beyond = a.ompAdvisorBeyond
+	return a
 }
 
 type ompModel struct {

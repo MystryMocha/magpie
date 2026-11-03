@@ -340,6 +340,13 @@ type Agent struct {
 	// (omp's, when PI_CODING_AGENT_DIR points it at Pi's): that it is there
 	// says nothing of this agent.
 	dirShared bool
+	// ompAdvisor, for omp, is where its advisor's settings are
+	// (omp_advisor.go, #5019)
+	ompAdvisor *ompAdvisorAt
+	// beyond, when set, is how a disconnect changes files outside the
+	// agent's folder, which DisconnectPreview's copy doesn't hold (a
+	// project's .omp files magpie wrote for omp's advisor)
+	beyond func() []FileChange
 	// shared, when set, is the name of what the agent keeps in a folder its
 	// vendor's other app reads and writes the same way: Cursor CLI's
 	// ~/.cursor (MCP servers, skills, hooks, chats) is the Cursor editor's

@@ -69,6 +69,9 @@ type place struct {
 	// dir is the agent's config folder when magpie keeps one of its own
 	// for it (claude-magpie's launch file, claude_launch.go); "": its own
 	dir string
+	// posix is any path magpie opens as the agent names it, one on
+	// Windows' drives too (distro.posix); nil: as is
+	posix func(string) string
 }
 
 func here(home string) place { return place{home: home} }
@@ -396,7 +399,30 @@ func (d distro) place(id string) place {
 		kind = k
 	}
 	return place{home: d.local(d.Home), id: id, spell: d.native, sys: d.local, base: d.base, cold: !d.Running, version: d.Versions[kind],
-		reach: d.open, unreached: new(error), chmod: d.chmod}
+		reach: d.open, unreached: new(error), chmod: d.chmod, posix: d.posix}
+}
+
+// posix is local, a path magpie opens, as the distro names it: one on a
+// Windows drive where the distro mounts that drive (Drives, the shortest
+// mount of it; WSL's /mnt/<letter> before a probe told), any other as
+// native does.
+func (d distro) posix(local string) string {
+	if len(local) < 2 || !isLetter(local[0]) || local[1] != ':' || len(local) > 2 && local[2] != '\\' && local[2] != '/' {
+		return d.native(local)
+	}
+	mount := ""
+	for m, drive := range d.Drives {
+		if strings.EqualFold(drive, local[:2]) && (mount == "" || len(m) < len(mount)) {
+			mount = m
+		}
+	}
+	if mount == "" {
+		mount = "/mnt/" + strings.ToLower(local[:1])
+	}
+	if rest := strings.Trim(strings.ReplaceAll(local[2:], `\`, "/"), "/"); rest != "" {
+		return strings.TrimSuffix(mount, "/") + "/" + rest
+	}
+	return mount
 }
 
 // chmod takes the group's and others' bits off local, a file in the distro
@@ -878,6 +904,10 @@ func wslAgent(k wslKind, d distro) *Agent {
 	id := k.id + "@wsl:" + d.Name
 	at := d.place(id)
 	a := k.in(at)
+	if a.ompAdvisor != nil {
+		// its advisor's files are looked at only while the distro runs
+		a.ompAdvisor.live = d.live
+	}
 	if k.restartAt != nil {
 		k.restart = k.restartAt(at)
 	}
