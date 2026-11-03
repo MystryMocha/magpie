@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -140,5 +141,38 @@ func TestOmpSubagentsAreTheSessionsToTheGateway(t *testing.T) {
 		if s := find(t, ss, "omp", id); len(s.Subs) != 0 {
 			t.Errorf("%s: subagents %v", id, s.Subs)
 		}
+	}
+}
+
+// The folders omp was run in, for its advisor's project list (#5019): each
+// sessions folder's cwd, read from its newest session's header after omp's
+// title line, the newest first; none once magpie doesn't read omp's.
+func TestOmpProjects(t *testing.T) {
+	home := setupAgents(t)
+	root := filepath.Join(home, ".omp", "agent", "sessions")
+	other := filepath.Join(root, "--work-other--")
+	os.MkdirAll(other, 0o755)
+	os.WriteFile(filepath.Join(other, "2026-10-01T00-00-00-000Z_x.jsonl"),
+		[]byte(`{"type":"title","v":1,"title":"t","pad":"   "}`+"\n"+`{"type":"session","version":3,"id":"x","cwd":"C:\\work\\other"}`+"\n"), 0o644)
+	// a folder whose session has no header names nothing
+	os.MkdirAll(filepath.Join(root, "--empty--"), 0o755)
+	os.WriteFile(filepath.Join(root, "--empty--", "a.jsonl"), []byte(`{"type":"message"}`+"\n"), 0o644)
+	now := time.Now()
+	os.Chtimes(filepath.Join(other, "2026-10-01T00-00-00-000Z_x.jsonl"), now, now)
+
+	got := OmpProjects(root, filepath.Join(home, "nowhere"))
+	var dirs []string
+	for _, p := range got {
+		dirs = append(dirs, p.Dir)
+	}
+	if !slices.Equal(dirs, []string{`C:\work\other`, "/work/omp"}) {
+		t.Fatalf("projects %v", dirs)
+	}
+	off := false
+	if err := SetReads(&off, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := OmpProjects(root); got != nil {
+		t.Fatalf("read while omp's sessions aren't: %v", got)
 	}
 }
