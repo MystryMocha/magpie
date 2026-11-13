@@ -187,11 +187,16 @@ func (l *launchSpec) function(kind, prog string) string {
 // PowerShell doesn't wait for when it runs alone, so @(& prog …) read
 // nothing and the function started bin off magpie without a word (#6084).
 // Printing nothing is how env says bin isn't on magpie, so only a failed
-// run of it is told, and bin then starts as it is.
+// run of it is told, and bin then starts as it is: what it printed before
+// failing is dropped, and PowerShell 7.3+'s
+// $PSNativeCommandUseErrorActionPreference, which a profile may turn on
+// with $ErrorActionPreference Stop, is off in the function, so the exit
+// throws nothing.
 func psStartRead(q, id, bin string) string {
 	return "    if (Test-Path -LiteralPath " + q + ") {\n" +
+		"        $PSNativeCommandUseErrorActionPreference = $false\n" +
 		"        & " + q + " " + id + " env | ForEach-Object { $k, $v = \"$_\" -split '=', 2; if ($v) { $start[$k] = $v } }\n" +
-		"        if ($LASTEXITCODE) { Write-Warning \"magpie " + id + " env failed (exit $LASTEXITCODE), so " + bin + " starts without magpie\" }\n" +
+		"        if ($LASTEXITCODE) { $start = @{}; Write-Warning \"magpie " + id + " env failed (exit $LASTEXITCODE), so " + bin + " starts without magpie\" }\n" +
 		"    }\n"
 }
 

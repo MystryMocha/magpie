@@ -146,6 +146,12 @@ jobs:
         if: runner.os == 'Windows'
         run: go test -v -count=1 ./internal/agent -run '^Test(Dsh|KeepDsh)'
 
+      # PowerShell's agy function reads `magpie agy env` from a GUI-subsystem
+      # stand-in for magpie.exe, in pwsh and Windows PowerShell (#6084).
+      - name: Windows PowerShell agy function
+        if: runner.os == 'Windows'
+        run: go test -v -count=1 ./internal/agent -run '^TestAgyPowerShell'
+
       - name: Windows VS Code detection
         if: runner.os == 'Windows'
         run: go test -v -count=1 ./internal/agent -run '^TestVSCodeDetected$'

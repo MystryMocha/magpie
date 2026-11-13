@@ -77,6 +77,9 @@ func main() {
 	fmt.Println("GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:3425")
 	fmt.Println("settings=C:\\agy\\settings.json")
 	fmt.Println("model=magpie/p/m")
+	if os.Getenv("STUB_AGY") == "half" {
+		os.Exit(3) // printed, then failed
+	}
 }
 `)
 	build("agy", "", `package main
@@ -100,17 +103,28 @@ func main() {
 		{"agent-agy", newLaunch(agyLaunchDesc(), `C:\agy\settings.json`).function("powershell", prog), "key=k-agy url= " + on},
 	} {
 		for _, sh := range shells {
-			for _, c := range []struct{ stub, want, warn string }{
-				{"", fn.on, ""},
-				{"off", plain, ""},
-				{"fail", plain, "magpie agy env failed (exit 3), so agy starts without magpie"},
+			failed := "magpie agy env failed (exit 3), so agy starts without magpie"
+			// strict is a profile that has a native command's exit throw
+			// (PowerShell 7.3+; 5.1 only sets a variable).
+			strict := "$ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true\n"
+			for _, c := range []struct{ stub, pre, want, warn string }{
+				{"", "", fn.on, ""},
+				{"", strict, fn.on, ""},
+				{"off", "", plain, ""},
+				{"fail", "", plain, failed},
+				{"fail", strict, plain, failed},
+				{"half", "", plain, failed},
 			} {
-				cmd := proc.Command(sh, "-NoProfile", "-NonInteractive", "-Command", fn.text+"\nagy -p hi")
+				label := c.stub
+				if c.pre != "" {
+					label += "+strict"
+				}
+				cmd := proc.Command(sh, "-NoProfile", "-NonInteractive", "-Command", c.pre+fn.text+"\nagy -p hi")
 				cmd.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"),
 					"GEMINI_API_KEY=", "GOOGLE_GEMINI_BASE_URL=", "STUB_AGY="+c.stub)
 				out, err := cmd.CombinedOutput()
 				if err != nil {
-					t.Fatalf("%s %s %q: %v\n%s", fn.name, filepath.Base(sh), c.stub, err, out)
+					t.Fatalf("%s %s %q: %v\n%s", fn.name, filepath.Base(sh), label, err, out)
 				}
 				// A warning's prefix is in the system's language (警告:)
 				// and pwsh colours it, so it is known by its text.
@@ -121,17 +135,17 @@ func main() {
 					if strings.Contains(l, " env failed ") {
 						warned = c.warn != "" && strings.Contains(l, c.warn)
 						if c.warn == "" {
-							t.Errorf("%s %s %q warned: %s", fn.name, filepath.Base(sh), c.stub, l)
+							t.Errorf("%s %s %q warned: %s", fn.name, filepath.Base(sh), label, l)
 						}
 						continue
 					}
 					lines = append(lines, l)
 				}
 				if got := strings.Join(lines, "\n"); got != c.want {
-					t.Errorf("%s %s %q started agy as\n%s\nwant\n%s", fn.name, filepath.Base(sh), c.stub, got, c.want)
+					t.Errorf("%s %s %q started agy as\n%s\nwant\n%s", fn.name, filepath.Base(sh), label, got, c.want)
 				}
 				if c.warn != "" && !warned {
-					t.Errorf("%s %s %q: no warning %q in\n%s", fn.name, filepath.Base(sh), c.stub, c.warn, out)
+					t.Errorf("%s %s %q: no warning %q in\n%s", fn.name, filepath.Base(sh), label, c.warn, out)
 				}
 			}
 		}
