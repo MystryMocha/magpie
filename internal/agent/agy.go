@@ -32,9 +32,9 @@ package agent
 // magpie's models. It runs `magpie agy run`, which starts the real agy
 // with the two variables and --model when settings.json's model is still
 // magpie's and as it is otherwise (cli/agy_cli.go); PowerShell's asks
-// `magpie agy env` for them, since the app it would run is a GUI program
-// PowerShell doesn't wait for. A terminal open before takes the command
-// from the row.
+// `magpie agy env` for them through a pipeline (psStartRead), since the
+// app it would run is a GUI program PowerShell waits for only there
+// (#6084). A terminal open before takes the command from the row.
 
 import (
 	"encoding/json"
@@ -116,10 +116,7 @@ func agyFunction(kind, prog string) string {
     $real = Get-Command agy -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $real) { Write-Error 'agy is not installed'; return }
     $start = @{}
-    if (Test-Path -LiteralPath ` + q + `) {
-        foreach ($l in @(& ` + q + ` agy env)) { $k, $v = "$l" -split '=', 2; if ($v) { $start[$k] = $v } }
-    }
-    if (-not $start.model -or @($args | Where-Object { "$_" -match '^--?(remote-control)(=|$)|^remote-control$' }).Count) { & $real @args; return }
+` + psStartRead(q, "agy", "agy") + `    if (-not $start.model -or @($args | Where-Object { "$_" -match '^--?(remote-control)(=|$)|^remote-control$' }).Count) { & $real @args; return }
     $was = $env:GEMINI_API_KEY, $env:GOOGLE_GEMINI_BASE_URL
     $env:GEMINI_API_KEY = $start.GEMINI_API_KEY; $env:GOOGLE_GEMINI_BASE_URL = $start.GOOGLE_GEMINI_BASE_URL
     try {

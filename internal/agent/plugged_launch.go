@@ -170,9 +170,7 @@ func (l *launchSpec) function(kind, prog string) string {
 			"    $real = Get-Command " + l.bin + " -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1\n" +
 			"    if (-not $real) { Write-Error '" + l.bin + " is not installed'; return }\n" +
 			"    $start = @{}\n" +
-			"    if (Test-Path -LiteralPath " + q + ") {\n" +
-			"        foreach ($l in @(& " + q + " " + l.id + " env)) { $k, $v = \"$l\" -split '=', 2; if ($v) { $start[$k] = $v } }\n" +
-			"    }\n" +
+			psStartRead(q, l.id, l.bin) +
 			"    if (-not $start.model" + plain + ") { & $real @args; return }\n" +
 			set +
 			"    try {\n" + run +
@@ -181,6 +179,20 @@ func (l *launchSpec) function(kind, prog string) string {
 	}
 	q := posixQuote(prog)
 	return l.posixHead() + "  if [ -x " + q + " ]; then " + q + " " + l.id + ` run "$@"; else command ` + l.bin + ` "$@"; fi` + "\n}"
+}
+
+// psStartRead is the lines of a PowerShell function that fill $start from
+// `prog <id> env` (q is prog, quoted by psQuote), a NAME=value a line. It
+// reads through a pipeline: magpie.exe on Windows is a GUI program, which
+// PowerShell doesn't wait for when it runs alone, so @(& prog …) read
+// nothing and the function started bin off magpie without a word (#6084).
+// Printing nothing is how env says bin isn't on magpie, so only a failed
+// run of it is told, and bin then starts as it is.
+func psStartRead(q, id, bin string) string {
+	return "    if (Test-Path -LiteralPath " + q + ") {\n" +
+		"        & " + q + " " + id + " env | ForEach-Object { $k, $v = \"$_\" -split '=', 2; if ($v) { $start[$k] = $v } }\n" +
+		"        if ($LASTEXITCODE) { Write-Warning \"magpie " + id + " env failed (exit $LASTEXITCODE), so " + bin + " starts without magpie\" }\n" +
+		"    }\n"
 }
 
 // distroFunction is the function in a WSL distro's shell of kind: while
